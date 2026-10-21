@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ito - 数字を例えて並べよう</title>
+<style>
+  :root {
+    --text: #5a5472; --muted: #9a93b5; --pink: #ff9ec4; --pink-d: #ff7eb0;
+    --lav: #cdbdff; --mint: #a8e6cf; --peach: #ffd9b8; --sky: #bfe3ff; --yellow: #fff2a8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+    background: linear-gradient(160deg, #ffe8f1 0%, #eee6ff 50%, #dff3ff 100%) fixed;
+    color: var(--text);
+    display: flex; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #app { width: 100%; max-width: 960px; padding: 20px 16px 40px; }
+  h1 { text-align: center; letter-spacing: .3em; margin: 8px 0 4px; font-size: 2.6rem; color: var(--pink-d); text-shadow: 2px 2px 0 #fff; }
+  .sub { text-align: center; color: var(--muted); margin-bottom: 20px; font-size: .95rem; }
+  .panel { background: rgba(255,255,255,.8); border: 2px solid #fff; border-radius: 24px; padding: 20px; margin-bottom: 16px; box-shadow: 0 6px 18px rgba(170,150,210,.2); }
+  label { display: block; margin: 12px 0 4px; font-size: .95rem; color: var(--muted); font-weight: bold; }
+  input[type=text], select {
+    width: 100%; padding: 12px 14px; border-radius: 16px; border: 2px solid #e4dcf7;
+    background: #fff; color: var(--text); font-size: 16px; font-family: inherit;
+  }
+  input[type=text]:focus, select:focus { outline: none; border-color: var(--lav); }
+  button {
+    cursor: pointer; border: none; border-radius: 20px; min-height: 52px; padding: 14px 30px;
+    font-size: 1.15rem; font-weight: bold; font-family: inherit;
+    background: linear-gradient(135deg, #ffb6d3, var(--pink-d)); color: #fff;
+    box-shadow: 0 5px 0 #f08ab4; transition: transform .1s, box-shadow .1s, opacity .2s;
+  }
+  button:hover { transform: translateY(-1px); }
+  button:active { transform: translateY(4px); box-shadow: 0 1px 0 #f08ab4; }
+  button:disabled { opacity: .45; cursor: default; transform: none; box-shadow: 0 5px 0 #f08ab4; }
+  button.sec { background: linear-gradient(135deg, #dccfff, var(--lav)); color: #5a4a8a; box-shadow: 0 5px 0 #b4a2ec; }
+  button.sec:active { box-shadow: 0 1px 0 #b4a2ec; }
+  .center { text-align: center; }
+  .row { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 18px; }
+  .status { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-weight: bold; padding: 0 6px; }
+  .theme { text-align: center; font-size: 1.7rem; font-weight: bold; color: var(--pink-d); margin: 6px 0; }
+  .theme small { display: block; font-size: .85rem; color: var(--muted); font-weight: bold; }
+  .bigcard {
+    width: 180px; height: 250px; margin: 20px auto; border-radius: 24px;
+    background: linear-gradient(145deg, #fff, var(--yellow)); color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 5rem; font-weight: bold; box-shadow: 0 8px 20px rgba(170,150,210,.35);
+  }
+  .bigcard.hidden { background: repeating-linear-gradient(45deg, var(--lav), var(--lav) 12px, #dccfff 12px, #dccfff 24px); color: #fff; font-size: 1.2rem; cursor: pointer; text-align: center; padding: 10px; white-space: pre-line; text-shadow: 0 1px 3px rgba(90,74,138,.5); }
+  .axis { display: flex; justify-content: space-between; color: var(--muted); font-size: .9rem; margin: 6px 4px 10px; font-weight: bold; }
+  .cards { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .card { width: 150px; background: #fff; border: 3px solid #e4dcf7; border-radius: 20px; padding: 12px; text-align: center; }
+  .card.ok { border-color: #7ed6a5; background: #f0fff7; }
+  .card.ng { border-color: #ff8fa3; background: #fff2f4; }
+  .card .name { font-weight: bold; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card .num {
+    height: 76px; display: flex; align-items: center; justify-content: center; font-size: 2.4rem; font-weight: bold;
+    border-radius: 16px; background: repeating-linear-gradient(45deg, var(--lav), var(--lav) 8px, #dccfff 8px, #dccfff 16px); color: #fff;
+  }
+  .card .num.open { background: var(--yellow); color: var(--text); animation: flip .5s; }
+  .card .clue { margin-top: 8px; font-size: .95rem; min-height: 1.4em; word-break: break-all; color: #e0709b; font-weight: bold; }
+  .card input { margin-top: 8px; padding: 8px 10px; }
+  .card .mv { display: flex; gap: 8px; margin-top: 10px; }
+  .card .mv button { flex: 1; min-height: 44px; padding: 8px; font-size: 1.1rem; background: linear-gradient(135deg, #cfeeff, var(--sky)); color: #3d6a8c; box-shadow: 0 4px 0 #9ccbea; }
+  .card .mv button:active { box-shadow: 0 1px 0 #9ccbea; }
+  @keyframes flip { from { transform: rotateY(90deg); } to { transform: rotateY(0); } }
+  .result { font-size: 1.8rem; font-weight: bold; text-align: center; margin: 14px 0 4px; }
+  .result.win { color: #3fb57a; } .result.lose { color: #ee6b86; }
+  .hearts { letter-spacing: 3px; color: var(--pink-d); }
+  table.rank { width: 100%; border-collapse: collapse; font-size: .95rem; margin-top: 8px; }
+  table.rank td { padding: 8px; border-bottom: 2px dashed #eadff7; }
+  table.rank tr.me { background: var(--yellow); font-weight: bold; }
+  .row .panel { flex: 1 1 100%; }
+  ul.rules { margin: 6px 0 0; padding-left: 20px; color: var(--text); line-height: 1.8; font-size: .95rem; }
+
+  @media (max-width: 600px) {
+    #app { padding: 12px 10px 32px; }
+    h1 { font-size: 2.1rem; }
+    .panel { padding: 14px; border-radius: 20px; }
+    .theme { font-size: 1.4rem; }
+    .bigcard { width: 150px; height: 210px; font-size: 4.2rem; }
+    .cards { gap: 10px; }
+    .card { width: calc(50% - 5px); padding: 10px; }
+    .card .num { height: 64px; font-size: 2rem; }
+    .row { flex-direction: column; align-items: stretch; }
+    .row button { width: 100%; }
+    .result { font-size: 1.5rem; }
+    table.rank { font-size: .85rem; }
+    table.rank td:nth-child(4), table.rank td:nth-child(5) { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function () {
+  const THEMES = [
+    "強そうな生き物", "もらって嬉しいもの", "大きいもの", "あったかいもの", "高いもの(値段)",
+    "ドキドキする瞬間", "好きな食べ物の辛さ", "行きたい旅行先の遠さ", "怖いもの", "速い乗り物",
+    "人気のあるもの", "重いもの", "うるさいもの", "かっこいいもの", "ありがたみのあるもの",
+    "眠くなるもの", "学校で苦手な教科", "家にあると便利なもの", "強い必殺技", "丸いもの",
+    "古いもの", "おいしいお菓子", "リラックスできる場所", "有名な人", "危険な遊び",
+    "朝に起きたくなさ", "好きな映画の面白さ", "小さいもの", "甘いもの", "行列に並んでもいいもの"
+  ];
+
+  const app = document.getElementById("app");
+  const state = {
+    names: [], lives: 3, maxLives: 3, round: 0, wins: 0,
+    theme: "", players: [], // {name, num, clue}
+    order: [], // player indices in current arrangement
+    viewIdx: 0, showing: false,
+  };
+
+  function el(tag, props, ...kids) {
+    const e = document.createElement(tag);
+    if (props) for (const k in props) {
+      if (k === "class") e.className = props[k];
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2), props[k]);
+      else if (k in e) e[k] = props[k];
+      else e.setAttribute(k, props[k]);
+    }
+    for (const kid of kids.flat()) if (kid != null && kid !== false) e.append(kid.nodeType ? kid : document.createTextNode(kid));
+    return e;
+  }
+  function render(...nodes) {
+    app.replaceChildren(el("h1", null, "ito"), el("div", { class: "sub" }, "数字を例えて、小さい順に並べよう(協力ゲーム)"), ...nodes);
+  }
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+  const hearts = () => "♥".repeat(state.lives) + "♡".repeat(state.maxLives - state.lives);
+
+  /* ---------- Setup ---------- */
+  function setup() {
+    const countSel = el("select", null, [2,3,4,5,6,7,8].map(n => el("option", { value: n, selected: n === 4 }, n + "人")));
+    const livesSel = el("select", null, [1,2,3,4,5].map(n => el("option", { value: n, selected: n === 3 }, "ライフ " + n)));
+    const namesBox = el("div");
+    const inputs = [];
+    function drawNames() {
+      namesBox.replaceChildren();
+      inputs.length = 0;
+      for (let i = 0; i < +countSel.value; i++) {
+        const inp = el("input", { type: "text", value: "プレイヤー" + (i + 1), maxLength: 8 });
+        inputs.push(inp);
+        namesBox.append(el("label", null, "名前 " + (i + 1)), inp);
+      }
+    }
+    countSel.addEventListener("change", drawNames);
+    drawNames();
+    render(
+      el("div", { class: "panel" },
+        el("b", null, "遊び方"),
+        el("ul", { class: "rules" },
+          el("li", null, "全員に1〜100の秘密の数字が配られます(1人1枚)。"),
+          el("li", null, "お題に沿って、自分の数字の大きさを「例え」で表現します(数字そのものは言えません)。"),
+          el("li", null, "みんなの例えを頼りに、全員の数字が小さい順になるようカードを並べ替えます。"),
+          el("li", null, "オープン! 順番が正しければ成功。間違いがあるとライフが1減ります。ライフ0でゲームオーバー。")
+        )
+      ),
+      el("div", { class: "panel" },
+        el("label", null, "人数"), countSel,
+        el("label", null, "ライフ"), livesSel,
+        namesBox,
+        el("div", { class: "row" }, el("button", {
+          onclick() {
+            state.names = inputs.map((i, k) => i.value.trim() || "プレイヤー" + (k + 1));
+            state.maxLives = state.lives = +livesSel.value;
+            state.round = 0; state.wins = 0;
+            newRound();
+          }
+        }, "ゲーム開始"))
+      )
+    );
+  }
+
+  /* ---------- Round ---------- */
+  function newRound() {
+    state.round++;
+    state.theme = THEMES[Math.floor(Math.random() * THEMES.length)];
+    const nums = shuffle(Array.from({ length: 100 }, (_, i) => i + 1));
+    state.players = state.names.map((name, i) => ({ name, num: nums[i], clue: "" }));
+    state.order = shuffle(state.players.map((_, i) => i));
+    state.viewIdx = 0; state.showing = false;
+    deal();
+  }
+
+  function statusBar() {
+    return el("div", { class: "status" },
+      el("span", null, "ラウンド " + state.round),
+      el("span", null, "成功 " + state.wins + " 回"),
+      el("span", { class: "hearts" }, "ライフ " + hearts())
+    );
+  }
+  function themeBox() {
+    return el("div", { class: "panel" }, el("div", { class: "theme" }, el("small", null, "お題"), state.theme));
+  }
+
+  function deal() {
+    const p = state.players[state.viewIdx];
+    const card = state.showing
+      ? el("div", { class: "bigcard" }, String(p.num))
+      : el("div", { class: "bigcard hidden", onclick() { state.showing = true; deal(); } }, "タップして\n数字を見る");
+    const btn = state.showing
+      ? el("button", {
+          onclick() {
+            state.showing = false;
+            state.viewIdx++;
+            if (state.viewIdx >= state.players.length) arrange(); else deal();
+          }
+        }, state.viewIdx + 1 >= state.players.length ? "隠して話し合いへ" : "隠して次の人へ")
+      : null;
+    render(
+      statusBar(), themeBox(),
+      el("div", { class: "panel center" },
+        el("div", null, state.showing ? p.name + " さんの数字(他の人に見せないで!)" : p.name + " さんの番です。他の人は画面を見ないでください。"),
+        card, btn
+      )
+    );
+  }
+
+  /* ---------- Arrange ---------- */
+  function arrange() {
+    const cards = el("div", { class: "cards" });
+    state.order.forEach((pi, pos) => {
+      const p = state.players[pi];
+      cards.append(el("div", { class: "card" },
+        el("div", { class: "name" }, p.name),
+        el("div", { class: "num" }, "?"),
+        el("input", {
+          type: "text", placeholder: "例え(メモ)", value: p.clue, maxLength: 20,
+          oninput(e) { p.clue = e.target.value; }
+        }),
+        el("div", { class: "mv" },
+          el("button", { disabled: pos === 0, onclick() { swap(pos, pos - 1); } }, "◀"),
+          el("button", { disabled: pos === state.order.length - 1, onclick() { swap(pos, pos + 1); } }, "▶")
+        )
+      ));
+    });
+    render(
+      statusBar(), themeBox(),
+      el("div", { class: "panel" },
+        el("div", { class: "center" }, "数字は言わず、お題に沿った「例え」を話し合い、小さい順に並べましょう。"),
+        el("div", { class: "axis" }, el("span", null, "← 小さい"), el("span", null, "大きい →")),
+        cards,
+        el("div", { class: "row" }, el("button", { onclick: reveal }, "オープン!"))
+      )
+    );
+  }
+  function swap(a, b) {
+    const o = state.order;
+    [o[a], o[b]] = [o[b], o[a]];
+    arrange();
+  }
+
+  /* ---------- Ranking ---------- */
+  const RANK_KEY = "ito-ranking";
+  function loadRanking() {
+    try { return JSON.parse(localStorage.getItem(RANK_KEY)) || []; } catch (e) { return []; }
+  }
+  function ranking() {
+    const entry = {
+      rounds: state.round, wins: state.wins,
+      members: state.names.join("・"),
+      date: new Date().toLocaleDateString("ja-JP")
+    };
+    const list = loadRanking();
+    list.push(entry);
+    list.sort((a, b) => b.rounds - a.rounds || b.wins - a.wins);
+    const top = list.slice(0, 10);
+    try { localStorage.setItem(RANK_KEY, JSON.stringify(top)); } catch (e) {}
+    const rows = top.map((r, i) => el("tr", { class: r === entry || (top.indexOf(entry) === i) ? "me" : "" },
+      el("td", null, (i + 1) + "位"),
+      el("td", null, r.rounds + " ラウンド"),
+      el("td", null, "成功 " + r.wins),
+      el("td", null, r.members),
+      el("td", null, r.date)));
+    const title = el("div", { class: "theme" }, "ランキング(続いたラウンド数)");
+    const panel = el("div", { class: "panel", style: "width:100%" },
+      title,
+      el("table", { class: "rank" }, rows),
+      top.includes(entry) ? null : el("div", { class: "center sub" }, "今回の記録はランキング圏外でした"),
+      el("div", { class: "row" }, el("button", {
+        class: "sec",
+        onclick() {
+          if (!confirm("ランキングの履歴をすべて消去します。よろしいですか?")) return;
+          try { localStorage.removeItem(RANK_KEY); } catch (e) {}
+          panel.replaceChildren(title, el("div", { class: "center sub" }, "履歴を消去しました"));
+        }
+      }, "履歴を消去"))
+    );
+    return panel;
+  }
+
+  /* ---------- Reveal ---------- */
+  function reveal() {
+    const rank = [...state.order].sort((a, b) => state.players[a].num - state.players[b].num);
+    const correct = state.order.map((pi, pos) => rank[pos] === pi);
+    const success = correct.every(Boolean);
+    const cards = el("div", { class: "cards" });
+    const nums = [], boxes = [];
+    state.order.forEach(pi => {
+      const p = state.players[pi];
+      const num = el("div", { class: "num" }, "?");
+      const box = el("div", { class: "card" },
+        el("div", { class: "name" }, p.name), num, el("div", { class: "clue" }, p.clue || "—"));
+      nums.push(num); boxes.push(box); cards.append(box);
+    });
+    const resultBox = el("div");
+    render(statusBar(), themeBox(),
+      el("div", { class: "panel" },
+        el("div", { class: "axis" }, el("span", null, "← 小さい"), el("span", null, "大きい →")),
+        cards, resultBox));
+
+    let i = 0;
+    const timer = setInterval(() => {
+      if (!document.body.contains(cards)) { clearInterval(timer); return; }
+      if (i < nums.length) {
+        const pi = state.order[i];
+        nums[i].textContent = state.players[pi].num;
+        nums[i].classList.add("open");
+        boxes[i].classList.add(correct[i] ? "ok" : "ng");
+        i++;
+        return;
+      }
+      clearInterval(timer);
+      if (success) state.wins++; else state.lives--;
+      const over = state.lives <= 0;
+      resultBox.append(
+        el("div", { class: "result " + (success ? "win" : "lose") },
+          success ? "🎉 成功!" : "💥 失敗… ライフ -1"),
+        el("div", { class: "center hearts" }, "ライフ " + hearts()),
+        el("div", { class: "row" },
+          over
+            ? [el("div", { class: "result lose" }, "ゲームオーバー(" + state.round + " ラウンド続きました / 成功 " + state.wins + " 回)"),
+               ranking(),
+               el("button", { onclick: setup }, "もう一度遊ぶ")]
+            : el("button", { onclick: newRound }, "次のラウンドへ"),
+          !over && el("button", { class: "sec", onclick: setup }, "やめる")
+        )
+      );
+    }, 700);
+  }
+
+  setup();
+})();
+</script>
+</body>
+</html>
